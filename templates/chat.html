@@ -62,8 +62,10 @@
         document.getElementById('send-button').onclick = function() {
             const messageInput = document.getElementById('message-input');
             const message = messageInput.value;
-            socket.emit('message', {username: username, group: group, message: message});
-            messageInput.value = '';
+            if (message) {
+                socket.emit('message', {username: username, group: group, message: message});
+                messageInput.value = '';
+            }
         };
 
         socket.on('message', function(data) {
@@ -72,6 +74,22 @@
             messageElement.classList.add('message');
             messageElement.textContent = `${data.username}: ${data.message}`;
             messages.appendChild(messageElement);
+        });
+
+        socket.on('user_joined', function(data) {
+            const messages = document.getElementById('messages');
+            const joinMessage = document.createElement('div');
+            joinMessage.classList.add('message');
+            joinMessage.textContent = `${data.username} 加入了群組`;
+            messages.appendChild(joinMessage);
+        });
+
+        socket.on('user_left', function(data) {
+            const messages = document.getElementById('messages');
+            const leaveMessage = document.createElement('div');
+            leaveMessage.classList.add('message');
+            leaveMessage.textContent = `${data.username} 離開了群組`;
+            messages.appendChild(leaveMessage);
         });
 
         // 錄音功能（基本示範）
@@ -88,7 +106,6 @@
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 const url = URL.createObjectURL(audioBlob);
-                // 這裡可以將音頻上傳或播放
                 console.log(url);
                 audioChunks = [];
             };
