@@ -91,32 +91,6 @@
             leaveMessage.textContent = `${data.username} 離開了群組`;
             messages.appendChild(leaveMessage);
         });
-
-        // 錄音功能（基本示範）
-        let mediaRecorder;
-        let audioChunks = [];
-
-        document.getElementById('record-button').onclick = async function() {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start();
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const url = URL.createObjectURL(audioBlob);
-                console.log(url);
-                audioChunks = [];
-            };
-
-            this.textContent = '停止錄音';
-            this.onclick = function() {
-                mediaRecorder.stop();
-                this.textContent = '錄音';
-                this.onclick = null;  // 防止多次觸發
-            };
-        };
     </script>
 </body>
 </html>
