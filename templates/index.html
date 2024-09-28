@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天應用 - 登錄</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@latest/css/boxicons.min.css">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="title">歡迎來到聊天應用</h1>
+        <form method="post">
+            <div class="field">
+                <label class="label">用戶名</label>
+                <div class="control">
+                    <input class="input" type="text" name="username" placeholder="輸入用戶名" required>
+                </div>
+            </div>
+            <button class="button is-primary is-fullwidth">
+                <i class='bx bx-log-in'></i> 登錄
+            </button>
+        </form>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="notification is-danger">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
