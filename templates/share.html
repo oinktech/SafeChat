@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>分享房間連結</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <h2 class="title">分享房間連結</h2>
+            <div class="field">
+                <div class="control">
+                    <input type="text" value="{{ url_for('chat', group_id=group_id, _external=True) }}" readonly class="input">
+                </div>
+            </div>
+            <button class="button is-info" onclick="copyLink()">
+                <i class='bx bx-copy'></i> 複製連結
+            </button>
+        </div>
+    </section>
+
+    <script>
+        function copyLink() {
+            const input = document.querySelector('input');
+            input.select();
+            document.execCommand('copy');
+            alert('連結已複製！');
+        }
+    </script>
+</body>
+</html>
