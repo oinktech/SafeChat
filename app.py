@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
 from flask_socketio import SocketIO, join_room, leave_room, send
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -8,6 +8,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat_app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['UPLOAD_FOLDER'] = 'uploads/'
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
 
@@ -25,13 +26,14 @@ class UserGroup(db.Model):
     group_id = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# 目前在線用戶
-online_users = {}
-
 # 初始化數據庫
 with app.app_context():
     db.create_all()
 
+# 用於儲存在線用戶
+online_users = set()
+
+# 首頁 - 創建或加入房間
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -40,7 +42,7 @@ def index():
 
         if username and 1 <= len(username) <= 20:
             if username in online_users:
-                flash('此用戶名已在線上，請選擇其他名稱。', 'error')
+                flash('該用戶名已在線，請選擇其他名稱。', 'error')
             else:
                 user = User.query.filter_by(username=username).first()
                 if user:
@@ -49,8 +51,8 @@ def index():
                     user = User(username=username)
                     db.session.add(user)
                     db.session.commit()
+                    online_users.add(username)  # 添加在線用戶
                     session['user_id'] = user.id
-                    online_users[username] = user.id  # 儲存在線用戶
 
                     if group_id:
                         return redirect(url_for('chat', group_id=group_id))
@@ -62,6 +64,7 @@ def index():
 
     return render_template('index.html')
 
+# 聊天房間
 @app.route('/<group_id>')
 def chat(group_id):
     user_id = session.get('user_id')
@@ -78,9 +81,10 @@ def chat(group_id):
 
     return render_template('chat.html', username=user.username, group=group_id)
 
+# 分享房間連結的路由
 @app.route('/share/<group_id>')
 def share(group_id):
-    return f"這是群組 {group_id} 的分享連結"
+    return render_template('share.html', group_id=group_id)
 
 # WebSocket事件處理
 @socketio.on('join')
@@ -96,6 +100,7 @@ def handle_leave(data):
     username = data['username']
     group = data['group']
     leave_room(group)
+    online_users.discard(username)  # 移除在線用戶
     send({'username': username, 'message': f'{username} 離開了群組'}, to=group)
     socketio.emit('user_left', {'username': username}, to=group)
 
@@ -106,6 +111,22 @@ def handle_message(data):
     message = data['message']
     send({'username': username, 'message': message}, to=group)
 
+# 上傳文件
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        flash('未選擇文件', 'error')
+        return redirect(url_for('chat', group_id=session['group_id']))
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('未選擇文件', 'error')
+        return redirect(url_for('chat', group_id=session['group_id']))
+
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    flash('文件已成功上傳', 'success')
+    return redirect(url_for('chat', group_id=session['group_id']))
+
 # 主函數
 if __name__ == '__main__':
-    socketio.run(app, debug=True,host='0.0.0.0,port=10000')
+    socketio.run(app, debug=True)
