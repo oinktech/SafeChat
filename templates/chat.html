@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ group }} - 群組聊天</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@latest/css/boxicons.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        #messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #fff;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+        }
+        #message-input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <h2 class="title">{{ group }} 群組聊天</h2>
+            <div id="messages" class="box">
+                {% for msg in messages %}
+                    <div class="message">
+                        <strong>{{ msg.username }}:</strong> {{ msg.message }}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="input-container">
+                <input id="message-input" class="input" placeholder="輸入訊息..." />
+                <button id="send-button" class="button is-primary">
+                    <i class='bx bx-send'></i> 發送
+                </button>
+            </div>
+
+            <h3 class="subtitle">上傳檔案</h3>
+            <input type="file" id="file-input" />
+            <button id="upload-button" class="button is-link">
+                <i class='bx bx-upload'></i> 上傳
+            </button>
+
+            <h3 class="subtitle">錄音</h3>
+            <div>
+                <button id="start-recording" class="button is-danger">
+                    <i class='bx bx-microphone'></i> 開始錄音
+                </button>
+                <button id="stop-recording" class="button is-success" disabled>
+                    <i class='bx bx-stop'></i> 停止錄音
+                </button>
+            </div>
+            <audio id="audio" controls></audio>
+
+            <script>
+                const socket = io();
+                const messages = document.getElementById('messages');
+
+                document.getElementById('send-button').onclick = function() {
+                    const messageInput = document.getElementById('message-input');
+                    const message = messageInput.value;
+                    const group = '{{ group }}';
+                    if (message) {
+                        socket.emit('send_message', { message, group });
+                        messageInput.value = '';
+                    }
+                };
+
+                socket.on('receive_message', function(data) {
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('message');
+                    messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+                    messages.appendChild(messageElement);
+                    messages.scrollTop = messages.scrollHeight;
+                });
+            </script>
+        </div>
+    </section>
+</body>
+</html>
