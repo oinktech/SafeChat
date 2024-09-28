@@ -6,4 +6,3 @@ gunicorn
 python-socketio
 flask_sqlalchemy
 flask_wtf
-gunicorn
