@@ -1,9 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
 from flask_socketio import SocketIO, join_room, leave_room, send
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, Length
 import os
 import uuid
 
@@ -82,7 +79,17 @@ def handle_join(data):
     username = data['username']
     group = data['group']
     join_room(group)
-    send(f'{username} 加入了群組', to=group)
+    send({'username': username, 'message': f'{username} 加入了群組'}, to=group)
+    send({'username': username, 'message': f'{username} 加入了群組'}, to=group)  # 透過廣播消息
+    socketio.emit('user_joined', {'username': username}, to=group)
+
+@socketio.on('leave')
+def handle_leave(data):
+    username = data['username']
+    group = data['group']
+    leave_room(group)
+    send({'username': username, 'message': f'{username} 離開了群組'}, to=group)
+    socketio.emit('user_left', {'username': username}, to=group)
 
 @socketio.on('message')
 def handle_message(data):
@@ -103,19 +110,10 @@ def upload_file():
         flash('未選擇文件', 'error')
         return redirect(url_for('chat', group_id=session['group_id']))
 
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    flash('文件已成功上傳', 'success')
     return redirect(url_for('chat', group_id=session['group_id']))
 
-# 共享房間連結
-@app.route('/share/<group_id>')
-def share(group_id):
-    return render_template('share.html', group_id=group_id)
-
-# 下載文件
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
+# 主函數
 if __name__ == '__main__':
-    socketio.run(app, debug=True,host='0.0.0.0',port=10000,allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True ,host='0.0.0.0',port=10000,allow_unsafe_werkzeug=True)
